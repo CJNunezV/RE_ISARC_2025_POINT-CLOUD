@@ -11,67 +11,67 @@ import matplotlib.cm as cm
 from mpl_toolkits.mplot3d import Axes3D
 
 # 0) Defining functions
-def get_center_line(point_cloud_points):
-    centroid = np.mean(point_cloud_points, axis=0)
+def get_center_line(point_cloud_points_f,offset):
+    centroid = np.mean(point_cloud_points_f, axis=0)
     pca = PCA(n_components=3)
-    pca.fit(point_cloud_points)
+    pca.fit(point_cloud_points_f)
 
     # Dirección principal (primer componente)
-    direction = pca.components_[0]  # Vector unitario de la recta
+    direction_tunnel_1_f = pca.components_[0]  # Vector unitario de la recta
 
-    print("Dirección de la recta:", direction)
+    print("Dirección de la recta:", direction_tunnel_1_f)
     # Punto base: el centroide
-    base_point = centroid-(0,0,1.15)
+    base_point_tunnel_1_f = centroid-(0,0,offset)
 
     t = np.linspace(-130, 130, 2601)  # 5cm -> s = 5201 /// 10cm -> 2601   /// 20cm -> 1301
-    line_points = base_point + t[:, None] * direction
-    line_points_np = np.array(line_points)
+    line_points_f = base_point_tunnel_1_f + t[:, None] * direction_tunnel_1_f
+    line_points_np_f = np.array(line_points_f)
 
-    colors_line = np.tile([0,0,0],(line_points_np.shape[0],1))
+    colors_line = np.tile([0,0,0],(line_points_np_f.shape[0],1))
 
-    line_pc = o3d.t.geometry.PointCloud(line_points_np) 
-    line_pc.point.colors = o3c.Tensor(colors_line, dtype=o3c.Dtype.Float32)
-    return line_pc,direction,base_point
+    line_pc_f = o3d.t.geometry.PointCloud(line_points_np_f) 
+    line_pc_f.point.colors = o3c.Tensor(colors_line, dtype=o3c.Dtype.Float32)
+    return line_pc_f,direction_tunnel_1_f,base_point_tunnel_1_f
+##Input : <class 'numpy.ndarray'>
+##Output <class 'open3d.cpu.pybind.t.geometry.PointCloud'>, <class 'numpy.ndarray'>, <class 'numpy.ndarray'>,<class 'numpy.ndarray'>
 
-def delimited_pc(line, point_cloud):
-    p1 = line[0]
-    p2 = line[-1]
+def delimited_pc(line_f, point_cloud_f):
+    p1 = line_f[0]
+    p2 = line_f[-1]
     # Calcula el vector director de la recta
     d = p2 - p1
     d_norm_sq = np.dot(d, d)
-    filtered_points = []
-    for Q in np.asarray(point_cloud.points):
+    filtered_points_f = []
+    for Q in np.asarray(point_cloud_f.points):
         t = np.dot(d, Q - p1)
         if 0 <= t <= d_norm_sq:
-            filtered_points.append(Q)
-    filtered_out= o3d.geometry.PointCloud()
-    filtered_out.points = o3d.utility.Vector3dVector(np.array(filtered_points))
-    return filtered_out
+            filtered_points_f.append(Q)
+    filtered_f= o3d.geometry.PointCloud()
+    filtered_f.points = o3d.utility.Vector3dVector(np.array(filtered_points_f))
+    return filtered_f
+##Input <class 'open3d.cpu.pybind.geometry.PointCloud'>
 
-def distances_pc_line(point_cloud_points,direction,base_point,range):
-    direction = direction / np.linalg.norm(direction)
-    # Calculamos el vector de cada punto respecto al punto base
-    vectors_to_line = point_cloud_points - base_point
-    # Producto cruzado entre cada vector y la dirección de la línea
-    cross_products = np.cross(vectors_to_line, direction)
-    # Magnitud del producto cruzado (distancias al eje)
-    distances = np.linalg.norm(cross_products, axis=1)
+def distances_pc_line(point_cloud_points_f,direction_tunnel_1_f,base_point_tunnel_1_f,range):
+    direction_tunnel_1_f = direction_tunnel_1_f / np.linalg.norm(direction_tunnel_1_f)
+    vectors_to_line = point_cloud_points_f - base_point_tunnel_1_f
+    cross_products = np.cross(vectors_to_line, direction_tunnel_1_f)
+    distances_f = np.linalg.norm(cross_products, axis=1)
 
-    mask1 = distances < range  # Índice lógico
-    point_cloud_points_in = point_cloud_points[mask1]
-    filtered_points_pc_in = o3d.geometry.PointCloud()
-    filtered_points_pc_in.points = o3d.utility.Vector3dVector(point_cloud_points_in)
+    mask1 = distances_f < range
+    point_cloud_points_in_f = point_cloud_points_f[mask1]
+    filtered_points_pc_in_f = o3d.geometry.PointCloud()
+    filtered_points_pc_in_f.points = o3d.utility.Vector3dVector(point_cloud_points_in_f)
 
-    mask2 = distances >= range  # Índice lógico
-    point_cloud_points_out = point_cloud_points[mask2]
-    filtered_points_pc_out = o3d.geometry.PointCloud()
-    filtered_points_pc_out.points = o3d.utility.Vector3dVector(point_cloud_points_out)
-    return distances,filtered_points_pc_in ,filtered_points_pc_out
+    mask2 = distances_f >= range
+    point_cloud_points_out_f = point_cloud_points_f[mask2]
+    filtered_points_pc_out_2022_f = o3d.geometry.PointCloud()
+    filtered_points_pc_out_2022_f.points = o3d.utility.Vector3dVector(point_cloud_points_out_f)
+    return distances_f,filtered_points_pc_in_f ,filtered_points_pc_out_2022_f
 
 def deleted_points_out(point_cloud_points, neighbors, max_distance):
     pcd = PyntCloud.from_instance("open3d", point_cloud_points)
-    kdtree_id = pcd.add_structure("kdtree")
-    k_neighbors = pcd.get_neighbors(k=neighbors, kdtree=kdtree_id) ##List of index of nearest points
+    kdtree_2022_id = pcd.add_structure("kdtree")
+    k_neighbors = pcd.get_neighbors(k=neighbors, kdtree=kdtree_2022_id) ##List of index of nearest points
     list_index=[]
     for i in range(len(point_cloud_points.points)):
         dis_points =0
@@ -87,14 +87,14 @@ def deleted_points_out(point_cloud_points, neighbors, max_distance):
 
     return filtered_pcd
  
-def project_point_to_plane(point,point_in_line,vector_line):
-    P_minus_P0 = point - point_in_line
+def project_point_to_plane(point_f,point_in_line_f,vector_line):
+    P_minus_P0 = point_f - point_in_line_f
     scalar_projection = np.dot(P_minus_P0,vector_line) / np.dot(vector_line,vector_line)
-    projection = point - scalar_projection * vector_line 
+    projection = point_f - scalar_projection * vector_line 
     return projection
 
-def transform_to_xy(point,line,point_line):
-    L_unit = line / np.linalg.norm(line)
+def transform_to_xy(point_f,line_f,point_line_f):
+    L_unit = line_f / np.linalg.norm(line_f)
     Z_axis = np.array([0, 0, 1])
     k = np.cross(L_unit, Z_axis)
     if np.linalg.norm(k) == 0:
@@ -108,53 +108,43 @@ def transform_to_xy(point,line,point_line):
             [-k_unit[1], k_unit[0], 0]
         ])
         R = np.eye(3) + np.sin(theta) * K + (1 - np.cos(theta)) * np.dot(K, K)
-    transformed_point = np.dot(R, point - point_line)
+    transformed_point = np.dot(R, point_f - point_line_f)
     return transformed_point[:2]
 
-def rotate(point, angle):
-    angle_radians = np.radians(angle)
+def rotate(point_f, angle_f):
+    angle_radians = np.radians(angle_f)
 
     # Matriz de rotación
     rotation_matrix = np.array([
         [np.cos(angle_radians), -np.sin(angle_radians)],
         [np.sin(angle_radians), np.cos(angle_radians)]
     ])
-    rotated_point = np.dot(rotation_matrix, point)
-    return rotated_point
+    rotated_point_f = np.dot(rotation_matrix, point_f)
+    return rotated_point_f
 
-def order_points_by_proximity(points):
-    # Convertir la lista de puntos en un array de NumPy
-    points = np.array(points)
+def order_points_by_proximity(points_f):
+    points_f = np.array(points_f)
     
-    # Inicializar la lista de puntos ordenados
-    ordered_points = []
+    ordered_points_f = []
     
-    # Seleccionar el primer punto más cercano al origen (0, 0)
-    current_point = points[np.argmin(np.linalg.norm(points, axis=1))]
-    ordered_points.append(current_point)
+    current_point = points_f[np.argmin(np.linalg.norm(points_f, axis=1))]
+    ordered_points_f.append(current_point)
     
-    # Eliminar el punto seleccionado de la lista original
-    remaining_points = points[~np.all(points == current_point, axis=1)]
+    remaining_points = points_f[~np.all(points_f == current_point, axis=1)]
     
-    # Iterar hasta que no queden puntos
     while len(remaining_points) > 0:
-        # Calcular la distancia desde el punto actual a todos los restantes
         distances = np.linalg.norm(remaining_points - current_point, axis=1)
-        
-        # Seleccionar el punto más cercano
         current_point = remaining_points[np.argmin(distances)]
-        ordered_points.append(current_point)
-        
-        # Eliminar el punto seleccionado de los puntos restantes
+        ordered_points_f.append(current_point)
         remaining_points = remaining_points[~np.all(remaining_points == current_point, axis=1)]
     
-    return np.array(ordered_points)
+    return np.array(ordered_points_f)
 
 #Comments
 #pcd_2022_n = pc base
 #downpcd_2022_n = down pc base
-#filtered_points_pc_out_2 =  clean(floor - mid) down pc base
-#point_cloud_clean = clean (all) down pc base
+#filtered_2022_n =  clean(floor - mid) down pc base
+#clean_2022 = clean (all) down pc base
 
 
 # 1) Variables
@@ -168,7 +158,7 @@ points_2024 = []
 print("2) Importing data")
 
 print("Reading 2019 PC")
-with open("D:/ISARC 2025/2019/Tunel_2_2019.txt","r") as file:
+with open("C:/Users/LENOVO - LAP/Desktop/CHRISTOPHER/RE_ISARC_2025_POINT-CLOUD/Database_Pointcloud/Tunel_2_2019.txt","r") as file:
     for line in file:
       points_2019.append([float(value) for value in line.split()[:3]])
 points_2019 = np.array(points_2019)
@@ -176,8 +166,8 @@ points_2019[:,0] -= 648000
 points_2019[:,1] -= 8566800
 points_2019[:,2] -= 2120
 
-print("Reading 2022 PC\n")
-with open("D:/ISARC 2025/2022\Tunel2/2. Nube de puntos/Tunel_2_2022.txt","r") as file:
+print("Reading 2022 PC")
+with open("C:/Users/LENOVO - LAP/Desktop/CHRISTOPHER/RE_ISARC_2025_POINT-CLOUD/Database_Pointcloud/Tunel_2_2022.txt","r") as file:
     for line in file:
       points_2022.append([float(value) for value in line.split()[:3]])
 points_2022 = np.array(points_2022)
@@ -186,9 +176,8 @@ points_2022[:,1] -= 8566800
 points_2022[:,2] -= 2120
 
 print("Reading 2024 PC")
-path_pcd_2024 = "D:/ISARC 2025/2024/Tunel_2_2024.pts"
+path_pcd_2024 = "C:/Users/LENOVO - LAP/Desktop/CHRISTOPHER/RE_ISARC_2025_POINT-CLOUD/Database_Pointcloud/Tunel_2_2024.pts"
 pcd_2024_v = o3d.io.read_point_cloud(path_pcd_2024)
-
 points_2024 = np.asarray(pcd_2024_v.points)
 points_2024[:,0] -= 648000
 points_2024[:,1] -= 8566800
@@ -201,126 +190,170 @@ print("El vowel size : 0.10 metros")
 print("3) Creating Point Clouds\n")
 
 print("\n\n3.1) Creating a PC based on Geometry 3D") ##########################################################################################################################################
+pcd_2019_n = o3d.geometry.PointCloud()
 pcd_2022_n = o3d.geometry.PointCloud()
+pcd_2024_n = o3d.geometry.PointCloud()
+
+pcd_2019_n.points = o3d.utility.Vector3dVector(points_2019)
 pcd_2022_n.points = o3d.utility.Vector3dVector(points_2022)
+pcd_2024_n.points = o3d.utility.Vector3dVector(points_2024)
+
 #o3d.visualization.draw_geometries([pcd_2022_n], window_name="Nube de puntos 2022 - Normal") ################################ PC First
 print("---Voxel down")
+downpcd_2019_n = pcd_2019_n.voxel_down_sample(voxel_size=my_vowel_size)
 downpcd_2022_n = pcd_2022_n.voxel_down_sample(voxel_size=my_vowel_size)
+downpcd_2024_n = pcd_2024_n.voxel_down_sample(voxel_size=my_vowel_size)
+
+#o3d.visualization.draw_geometries([downpcd_2024_n], window_name="Nube de puntos 2022 - Down - Normal")  ################################ PC Down
+
+print("---Getting a copy")
+deleted_downpcd_2019_n = copy.deepcopy(downpcd_2019_n)
 deleted_downpcd_2022_n = copy.deepcopy(downpcd_2022_n)
-#o3d.visualization.draw_geometries([downpcd_2022_n], window_name="Nube de puntos 2022 - Down - Normal")  ################################ PC Down
+deleted_downpcd_2024_n = copy.deepcopy(downpcd_2024_n)
+
 print("---Vertex normal estimation")
+downpcd_2019_n.estimate_normals(search_param=o3d.geometry.KDTreeSearchParamHybrid(radius=0.1,max_nn=30))
 downpcd_2022_n.estimate_normals(search_param=o3d.geometry.KDTreeSearchParamHybrid(radius=0.1,max_nn=30))
-print("---Painting point cloud")
-#downpcd_2022_n.paint_uniform_color([1,0,0])
+downpcd_2024_n.estimate_normals(search_param=o3d.geometry.KDTreeSearchParamHybrid(radius=0.1,max_nn=30))
 
 
 print("\n\n3.2) Eliminación de puntos") #####################################################################################################################################################
 print("PRIMERA ITERACIÓN")
-deleted_downpcd_2022_n_points = np.asarray(deleted_downpcd_2022_n.points) ##deleted_downpcd_2022_n = copy.deepcopy(downpcd_2022_n)
-line_2022_pc,direction,base_point = get_center_line(deleted_downpcd_2022_n_points) ##Input : <class 'numpy.ndarray'>
-##Output <class 'open3d.cpu.pybind.t.geometry.PointCloud'>, <class 'numpy.ndarray'>, <class 'numpy.ndarray'>,<class 'numpy.ndarray'>
-distances,filtered_points_pc_in,filtered_points_pc_out = distances_pc_line(deleted_downpcd_2022_n_points,direction,base_point,0.9)
-#o3d.visualization.draw_geometries([filtered_points_pc_in,line_2022_pc.to_legacy()])
-#o3d.visualization.draw_geometries([filtered_points_pc_out,line_2022_pc.to_legacy()])
+deleted_downpcd_2019_n_points = np.asarray(deleted_downpcd_2019_n.points)
+deleted_downpcd_2022_n_points = np.asarray(deleted_downpcd_2022_n.points)
+deleted_downpcd_2024_n_points = np.asarray(deleted_downpcd_2024_n.points) 
+
+center_line_tunnel_1,direction_tunnel_1,base_point_tunnel_1 = get_center_line(deleted_downpcd_2022_n_points,1.15) 
+
+distances_2019,filtered_points_pc_in_2019,filtered_points_pc_out_2019 = distances_pc_line(deleted_downpcd_2019_n_points,direction_tunnel_1,base_point_tunnel_1,0.9)
+distances_2022,filtered_points_pc_in_2022,filtered_points_pc_out_2022 = distances_pc_line(deleted_downpcd_2022_n_points,direction_tunnel_1,base_point_tunnel_1,0.9)
+distances_2024,filtered_points_pc_in_2024,filtered_points_pc_out_2024 = distances_pc_line(deleted_downpcd_2024_n_points,direction_tunnel_1,base_point_tunnel_1,0.7)
+
+#o3d.visualization.draw_geometries([filtered_points_pc_in_2019,center_line_tunnel_1.to_legacy()])
+#o3d.visualization.draw_geometries([filtered_points_pc_in_2024,center_line_tunnel_1.to_legacy()])
 
 print("DELIMITACION DE LONGITUD")
-filtered_out= delimited_pc(np.asarray(line_2022_pc.to_legacy().points),filtered_points_pc_out) ##Input <class 'open3d.cpu.pybind.geometry.PointCloud'>
+filtered_2019_out= delimited_pc(np.asarray(center_line_tunnel_1.to_legacy().points),filtered_points_pc_out_2019)
+filtered_2022_out= delimited_pc(np.asarray(center_line_tunnel_1.to_legacy().points),filtered_points_pc_out_2022)
+filtered_2024_out= delimited_pc(np.asarray(center_line_tunnel_1.to_legacy().points),filtered_points_pc_out_2024)
+
 
 print("SEGUNDA ITERACIÓN")
-line_2022_pc_2 ,direction2,base_point2 = get_center_line(np.asarray(filtered_out.points)) ##Input : <class 'numpy.ndarray'>
-distances_2,filtered_points_pc_in_2,filtered_points_pc_out_2 = distances_pc_line(np.asarray(filtered_out.points),direction2,base_point2,1)
-#o3d.visualization.draw_geometries([filtered_points_pc_in_2,line_2022_pc_2.to_legacy()])
-#o3d.visualization.draw_geometries([filtered_points_pc_out_2,line_2022_pc_2.to_legacy()])
+center_line_tunnel_2 ,direction_tunnel_2,base_point_tunnel_2 = get_center_line(np.asarray(filtered_2022_out.points),1.10)
 
-#Resultado de esta interacción : filtered_points_pc_out_2
+print("POINT CLOUD LIMPIOS")
+distances_2019,filtered_points_pc_in_2019,filtered_2019_n = distances_pc_line(np.asarray(filtered_2019_out.points),direction_tunnel_2,base_point_tunnel_2,1.05)
+distances_2022,filtered_points_pc_in_2022,filtered_2022_n = distances_pc_line(np.asarray(filtered_2022_out.points),direction_tunnel_2,base_point_tunnel_2,1)
+distances_2024,filtered_points_pc_in_2024,filtered_2024_n = distances_pc_line(np.asarray(filtered_2024_out.points),direction_tunnel_2,base_point_tunnel_2,0.9)
+
+#o3d.visualization.draw_geometries([filtered_points_pc_in_2022,center_line_tunnel_2.to_legacy()])
+#o3d.visualization.draw_geometries([filtered_points_pc_in_2024,center_line_tunnel_2.to_legacy()])
 
 
 print("\n\n3.3) KDTreee")
 print("step 1 - Create a Pyntcloud object")
-pcd2 = PyntCloud.from_instance("open3d", filtered_points_pc_out_2)
-print("cloud has", len(pcd2.points), "points.")
+pynt_2019 = PyntCloud.from_instance("open3d", filtered_2019_n)
+print("Point cloud 2019 has", len(pynt_2019.points), "points.")
+
+pynt_2022 = PyntCloud.from_instance("open3d", filtered_2022_n)
+print("Point cloud 2022 has", len(pynt_2022.points), "points.")
+
+pynt_2024 = PyntCloud.from_instance("open3d", filtered_2024_n)
+print("Point cloud 2024 has", len(pynt_2024.points), "points.")
+
 # Find Neighbors
 print("Step 2 - Find Neighbors using KD Tree")
 k_n = 3
-kdtree_id = pcd2.add_structure("kdtree")
-k_neighbors = pcd2.get_neighbors(k=k_n, kdtree=kdtree_id) ##List of index of nearest points
 
-point_cloud_clean = deleted_points_out(filtered_points_pc_out_2, k_n, 0.20)
-point_cloud_clean.estimate_normals(search_param=o3d.geometry.KDTreeSearchParamHybrid(radius=0.1,max_nn=30))
+clean_2019 = deleted_points_out(filtered_2019_n, k_n, 0.20)
+clean_2022 = deleted_points_out(filtered_2022_n, k_n, 0.20)
+clean_2024 = deleted_points_out(filtered_2024_n, k_n, 0.20)
 
-#o3d.visualization.draw_geometries([point_cloud_clean])
+clean_2019.estimate_normals(search_param=o3d.geometry.KDTreeSearchParamHybrid(radius=0.1,max_nn=30))
+clean_2022.estimate_normals(search_param=o3d.geometry.KDTreeSearchParamHybrid(radius=0.1,max_nn=30))
+clean_2024.estimate_normals(search_param=o3d.geometry.KDTreeSearchParamHybrid(radius=0.1,max_nn=30))
+#o3d.visualization.draw_geometries([clean_2019])
 
 
 print("\n\n3.4) Getting Cross-Sections")
-#PC: point_cloud_clean
-#Line: line_2022_pc_2 'open3d.cpu.pybind.t.geometry.PointCloud'>
-#Direc: direction2
-points_clean = point_cloud_clean.points
+#PC: clean_2022
+#Line: center_line_tunnel_2 'open3d.cpu.pybind.t.geometry.PointCloud'>
+#Direc: direction_tunnel_2
 
-line_numpy = line_2022_pc_2.point.positions.numpy()
+center_line_numpy = center_line_tunnel_2.point.positions.numpy()
 
-for i in range(len(line_numpy) - 1):
-    pair = np.array([line_numpy[i], line_numpy[i + 1]])  
-    section_points = delimited_pc(pair, point_cloud_clean) #<class 'numpy.ndarray'>
-    list_points=[]
-    list_x=[]
-    list_y=[]
-    for point in np.asarray(section_points.points):
-        #projection = project_point_to_plane(point, line_numpy[i], direction2)
-        #print(projection)
-        projection = rotate(transform_to_xy(point,direction2, line_numpy[i]),-10)
-        list_points.append(projection)
+for i in range(len(center_line_numpy) - 1):
+    pair = np.array([center_line_numpy[i], center_line_numpy[i + 1]])  
+
+    section_points_2019 = delimited_pc(pair, clean_2019)
+    section_points_2022 = delimited_pc(pair, clean_2022)
+    section_points_2024 = delimited_pc(pair, clean_2024)
+
+    list_points_2019=[]
+    list_points_2022=[]
+    list_points_2024=[]
+
+    list_x_2019=[]
+    list_x_2022=[]
+    list_x_2024=[]
+
+    list_y_2019=[]
+    list_y_2022=[]
+    list_y_2024=[]
+
+    for point_2019 in np.asarray(section_points_2019.points):
+        projection_2019 = rotate(transform_to_xy(point_2019,direction_tunnel_2, center_line_numpy[i]),-10)
+        list_points_2019.append(projection_2019)
+    for point_2022 in np.asarray(section_points_2022.points):
+        projection_2022 = rotate(transform_to_xy(point_2022,direction_tunnel_2, center_line_numpy[i]),-10)
+        list_points_2022.append(projection_2022)
+    for point_2024 in np.asarray(section_points_2024.points):
+        projection_2024 = rotate(transform_to_xy(point_2024,direction_tunnel_2, center_line_numpy[i]),-10)
+        list_points_2024.append(projection_2024)
     
-    list_points_order= order_points_by_proximity(list_points)
-    list_points_order = np.vstack([list_points_order, list_points_order[0]])
+    list_points_order_2019 = order_points_by_proximity(list_points_2019)
+    list_points_order_2022 = order_points_by_proximity(list_points_2022)
+    list_points_order_2024 = order_points_by_proximity(list_points_2024)
+
+    #list_points_order_2019 = np.vstack([list_points_order_2019, list_points_order_2019[0]])
+    #list_points_order_2022 = np.vstack([list_points_order_2022, list_points_order_2022[0]])
+    #list_points_order_2024 = np.vstack([list_points_order_2024, list_points_order_2024[0]])
+
+    for j in list_points_order_2019:
+        list_x_2019.append(j[0])
+        list_y_2019.append(-j[1])
+    for i in list_points_order_2022:
+        list_x_2022.append(i[0])
+        list_y_2022.append(-i[1]) #Debido a la data obtenida, se multiplica por -1
+    for k in list_points_order_2024:
+        list_x_2024.append(k[0])
+        list_y_2024.append(-k[1])    
     
-    for i in list_points_order:
-        list_x.append(i[0])
-        list_y.append(-i[1]) #Debido a la data obtenida, se multiplica por -1
-    plt.scatter(list_x, list_y, c='blue', marker='o', label='Puntos') 
-    plt.xlabel('X')
-    plt.ylabel('Y')
-    plt.title('Profile +0.00')
-    plt.grid(True)
-    for i in range(len(list_x) - 1):
-        plt.plot([list_x[i], list_x[i + 1]], [list_y[i], list_y[i + 1]], color='red', linestyle='-', linewidth=2)
-    plt.legend()
+    plt.plot(list_x_2019, list_y_2019, color='blue', linestyle='-', label='2019')
+    plt.plot(list_x_2022, list_y_2022, color='green', linestyle='-', label='2022')
+    plt.plot(list_x_2024, list_y_2024, color='red', linestyle='-', label='2024')
+    plt.title('ISARC - 2025')
+
+    # Añadir una leyenda
+    plt.legend(title='Años', loc='upper left')
+
+    # Etiquetas de los ejes
+    plt.xlabel('Eje X')
+    plt.ylabel('Eje Y')
+
     plt.show()
-    o3d.visualization.draw_geometries([section_points])
+    #o3d.visualization.draw_geometries([section_points_2022])
 
 
 print("\n\n3.5) Reconstruction") #####################################################################################################################################################
 print("Alpha shapes")
 alpha = 20
 print(f"alpha={alpha:.3f}")
-mesh = o3d.geometry.TriangleMesh.create_from_point_cloud_alpha_shape(point_cloud_clean, alpha)
+mesh = o3d.geometry.TriangleMesh.create_from_point_cloud_alpha_shape(clean_2022, alpha)
 mesh.compute_vertex_normals(normalized=True)
 #o3d.visualization.draw_geometries([mesh], mesh_show_back_face=True)
 
 
-print ("\n\n3.5) Cross-Sectional Tunnel")
-x = [-10, -5, 0, 5, 10]
-y = [100, 25, 0, 25, 100]
-
-# Crear el gráfico
-plt.figure(figsize=(6, 6))  # Crear un lienzo cuadrado
-plt.axhline(0, color='black', linewidth=0.5)  # Eje X
-plt.axvline(0, color='black', linewidth=0.5)  # Eje Y
-plt.grid(color='gray', linestyle='--', linewidth=0.5)  # Cuadrícula
-
-# Dibujar los puntos
-plt.scatter(x, y, color='blue', label='Puntos')
-
-# Dibujar líneas que conecten los puntos
-for i in range(len(x) - 1):
-    plt.plot([x[i], x[i + 1]], [y[i], y[i + 1]], color='red', linestyle='-', linewidth=1)
-
-# Personalizar el gráfico
-plt.title('Plano Cartesiano con Líneas entre Puntos')
-plt.xlabel('Eje X')
-plt.ylabel('Eje Y')
-plt.legend()
-#plt.show()
 
 
 

@@ -103,7 +103,7 @@ center_geometry_2022 = []
 print("2) Importing data")
 
 print("Reading 2022 PC\n")
-with open("D:/ISARC 2025/2022\Tunel2/2. Nube de puntos/Tunel_2_2022.txt","r") as file:
+with open("C:/Users/LENOVO - LAP/Desktop/CHRISTOPHER/RE_ISARC_2025_POINT-CLOUD/Database_Pointcloud/Tunel_2_2019.txt","r") as file:
     for line in file:
       points_2022.append([float(value) for value in line.split()[:3]])
 points_2022 = np.array(points_2022)
