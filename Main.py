@@ -158,7 +158,7 @@ points_2024 = []
 print("2) Importing data")
 
 print("Reading 2019 PC")
-with open("C:/Users/LENOVO - LAP/Desktop/CHRISTOPHER/RE_ISARC_2025_POINT-CLOUD/Database_Pointcloud/Tunel_2_2019.txt","r") as file:
+with open("C:/Users/LENOVO - LAP/Desktop/CHRISTOPHER/Database_Pointcloud/Tunel_2_2019.txt","r") as file:
     for line in file:
       points_2019.append([float(value) for value in line.split()[:3]])
 points_2019 = np.array(points_2019)
@@ -167,7 +167,7 @@ points_2019[:,1] -= 8566800
 points_2019[:,2] -= 2120
 
 print("Reading 2022 PC")
-with open("C:/Users/LENOVO - LAP/Desktop/CHRISTOPHER/RE_ISARC_2025_POINT-CLOUD/Database_Pointcloud/Tunel_2_2022.txt","r") as file:
+with open("C:/Users/LENOVO - LAP/Desktop/CHRISTOPHER/Database_Pointcloud/Tunel_2_2022.txt","r") as file:
     for line in file:
       points_2022.append([float(value) for value in line.split()[:3]])
 points_2022 = np.array(points_2022)
@@ -176,14 +176,14 @@ points_2022[:,1] -= 8566800
 points_2022[:,2] -= 2120
 
 print("Reading 2024 PC")
-path_pcd_2024 = "C:/Users/LENOVO - LAP/Desktop/CHRISTOPHER/RE_ISARC_2025_POINT-CLOUD/Database_Pointcloud/Tunel_2_2024.pts"
+path_pcd_2024 = "C:/Users/LENOVO - LAP/Desktop/CHRISTOPHER/Database_Pointcloud/Tunel_2_2024.pts"
 pcd_2024_v = o3d.io.read_point_cloud(path_pcd_2024)
 points_2024 = np.asarray(pcd_2024_v.points)
 points_2024[:,0] -= 648000
 points_2024[:,1] -= 8566800
 points_2024[:,2] -= 2120
 
-my_vowel_size=0.1 #metros
+my_vowel_size=0.10 #metros
 print("El vowel size : 0.10 metros")
 
 # 3) Creating Point Cloud
@@ -198,11 +198,20 @@ pcd_2019_n.points = o3d.utility.Vector3dVector(points_2019)
 pcd_2022_n.points = o3d.utility.Vector3dVector(points_2022)
 pcd_2024_n.points = o3d.utility.Vector3dVector(points_2024)
 
-#o3d.visualization.draw_geometries([pcd_2022_n], window_name="Nube de puntos 2022 - Normal") ################################ PC First
+print(pcd_2019_n)
+print(pcd_2022_n)
+print(pcd_2024_n)
+
+#o3d.visualization.draw_geometries([pcd_2022_n], window_name="Nube de puntos - Normal") ################################ PC First
 print("---Voxel down")
 downpcd_2019_n = pcd_2019_n.voxel_down_sample(voxel_size=my_vowel_size)
 downpcd_2022_n = pcd_2022_n.voxel_down_sample(voxel_size=my_vowel_size)
 downpcd_2024_n = pcd_2024_n.voxel_down_sample(voxel_size=my_vowel_size)
+
+print(downpcd_2019_n )
+print(downpcd_2022_n )
+print(downpcd_2024_n )
+
 
 #o3d.visualization.draw_geometries([downpcd_2024_n], window_name="Nube de puntos 2022 - Down - Normal")  ################################ PC Down
 
@@ -229,7 +238,7 @@ distances_2019,filtered_points_pc_in_2019,filtered_points_pc_out_2019 = distance
 distances_2022,filtered_points_pc_in_2022,filtered_points_pc_out_2022 = distances_pc_line(deleted_downpcd_2022_n_points,direction_tunnel_1,base_point_tunnel_1,0.9)
 distances_2024,filtered_points_pc_in_2024,filtered_points_pc_out_2024 = distances_pc_line(deleted_downpcd_2024_n_points,direction_tunnel_1,base_point_tunnel_1,0.7)
 
-#o3d.visualization.draw_geometries([filtered_points_pc_in_2019,center_line_tunnel_1.to_legacy()])
+#o3d.visualization.draw_geometries([filtered_points_pc_out_2022,center_line_tunnel_1.to_legacy()])
 #o3d.visualization.draw_geometries([filtered_points_pc_in_2024,center_line_tunnel_1.to_legacy()])
 
 print("DELIMITACION DE LONGITUD")
@@ -246,6 +255,18 @@ distances_2019,filtered_points_pc_in_2019,filtered_2019_n = distances_pc_line(np
 distances_2022,filtered_points_pc_in_2022,filtered_2022_n = distances_pc_line(np.asarray(filtered_2022_out.points),direction_tunnel_2,base_point_tunnel_2,1)
 distances_2024,filtered_points_pc_in_2024,filtered_2024_n = distances_pc_line(np.asarray(filtered_2024_out.points),direction_tunnel_2,base_point_tunnel_2,0.9)
 
+print("TOTAL 2019")
+print(deleted_downpcd_2019_n)
+print("AFTER FILTER 2019")
+print(filtered_2019_n)
+print("TOTAL 2022")
+print(deleted_downpcd_2022_n)
+print("AFTER FILTER 2022")
+print(filtered_2022_n)
+print("TOTAL 2024")
+print(deleted_downpcd_2024_n)
+print("AFTER FILTER 2024")
+print(filtered_2024_n)
 #o3d.visualization.draw_geometries([filtered_points_pc_in_2022,center_line_tunnel_2.to_legacy()])
 #o3d.visualization.draw_geometries([filtered_points_pc_in_2024,center_line_tunnel_2.to_legacy()])
 
@@ -341,8 +362,9 @@ for i in range(len(center_line_numpy) - 1):
     plt.xlabel('Eje X')
     plt.ylabel('Eje Y')
 
+    o3d.visualization.draw_geometries([section_points_2022])
     plt.show()
-    #o3d.visualization.draw_geometries([section_points_2022])
+   
 
 
 print("\n\n3.5) Reconstruction") #####################################################################################################################################################
