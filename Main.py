@@ -9,6 +9,7 @@ import plotly.graph_objects as go
 from pyntcloud import PyntCloud
 import matplotlib.cm as cm
 from mpl_toolkits.mplot3d import Axes3D
+from scipy.spatial import ConvexHull
 
 # 0) Defining functions
 def get_center_line(point_cloud_points_f,offset):
@@ -140,19 +141,119 @@ def order_points_by_proximity(points_f):
     
     return np.array(ordered_points_f)
 
+def order_points_tunnel_positive(points_f):
+    points_f = np.array(points_f)
+    ordered_points_f = []
+    
+    #filter_1 = points_f[(points_f[:, 0] > 0) & (points_f[:, 1] < 0)]
+    filter_1 = points_f[(points_f[:, 0] > 0)]
+    current_point_1 = filter_1[np.argmin(filter_1[:, 0])]
+    ordered_points_f.append(current_point_1)
+
+    points_f = np.delete(points_f, np.where((points_f == current_point_1).all(axis=1)), axis=0)  # Eliminar el punto seleccionado
+    
+    #while len(points_f) > 0:
+    #    distances = np.linalg.norm(points_f - current_point_1, axis=1)  # Calcular distancia desde el punto actual
+    #    next_point = points_f[np.argmin(distances)]  # Encontrar el más cercano
+    #    ordered_points_f.append(next_point)  # Añadir a la lista de puntos ordenados
+    #    current_point_1 = next_point  # Actualizar el punto actual
+    #    points_f = np.delete(points_f, np.where((points_f == next_point).all(axis=1)), axis=0)  # Eliminar el punto seleccionado
+    
+    while len(filter_1) > 0:
+        distances = np.linalg.norm(filter_1 - current_point_1, axis=1)  # Calcular distancia desde el punto actual
+        next_point = filter_1[np.argmin(distances)]  # Encontrar el más cercano
+        ordered_points_f.append(next_point)  # Añadir a la lista de puntos ordenados
+        current_point_1 = next_point  # Actualizar el punto actual
+        filter_1 = np.delete(filter_1, np.where((filter_1 == next_point).all(axis=1)), axis=0)  # Eliminar el punto seleccionado
+    return np.array(ordered_points_f)
+
+def order_points_tunnel_negative(points_n):
+    points_n = np.array(points_n)
+    ordered_points_n = []
+
+    filter_2 = points_n[(points_n[:, 0] < 0)]
+    current_point_2 = filter_2[np.argmax(filter_2[:, 0])]
+    ordered_points_n.append(current_point_2)
+
+    while len(filter_2) > 0:
+        distances = np.linalg.norm(filter_2 - current_point_2, axis=1)  # Calcular distancia desde el punto actual
+        next_point_2 = filter_2[np.argmin(distances)]  # Encontrar el más cercano
+        ordered_points_n.append(next_point_2)  # Añadir a la lista de puntos ordenados
+        current_point_2 = next_point_2  # Actualizar el punto actual
+        filter_2 = np.delete(filter_2, np.where((filter_2 == next_point_2).all(axis=1)), axis=0)  # Eliminar el punto seleccionado
+
+    for i in range(len(ordered_points_n) - 1):
+        # Calcular la distancia entre puntos consecutivos
+        distance = np.linalg.norm(ordered_points_n[i + 1] - ordered_points_n[i])
+        # Si la distancia excede el límite, cortar la lista
+        if distance > 0.25:
+            new_points_n= ordered_points_n[:i]
+            if new_points_n[0][0] > new_points_n[-1][0]:
+                new_points_n = new_points_n[::-1]
+                return np.array(new_points_n)
+            else:
+                return np.array(new_points_n)
+    
+    if ordered_points_n[0][0] > ordered_points_n[-1][0]:
+        ordered_points_n = ordered_points_n[::-1]
+    return np.array(ordered_points_n)
+
+def filter_points_by_angle(ordered_points_a, angle_threshold=90):
+    # Convertir a NumPy array si no lo es
+    ordered_points_a = np.array(ordered_points_a)
+    filtered_points_a = [ordered_points_a[0], ordered_points_a[1]]  # Agregar los dos primeros puntos
+    
+    for i in range(2, len(ordered_points_a)):
+        # Definir los puntos necesarios
+        p1, p2, p3 = filtered_points_a[-2], filtered_points_a[-1], ordered_points_a[i]
+        
+        # Calcular los vectores entre los puntos
+        v1 = p2 - p1
+        v2 = p3 - p2
+        
+        # Calcular el ángulo entre los vectores
+        cos_theta = np.dot(v1, v2) / (np.linalg.norm(v1) * np.linalg.norm(v2))
+        cos_theta = np.clip(cos_theta, -1.0, 1.0)  # Asegurar que está en el rango [-1, 1]
+        angle = np.degrees(np.arccos(cos_theta))  # Convertir a grados
+        
+        # Verificar el ángulo
+        if angle <= angle_threshold:
+            filtered_points_a.append(p3)  # Mantener el punto si el ángulo cumple el criterio
+    
+    return np.array(filtered_points_a)
+
+def filter_points_by_distance(ordered_points_n, max_distance=0.40):
+    # Convertir a NumPy array si no lo es
+    ordered_points_n = np.array(ordered_points_n)
+    
+    # Verificar si hay suficientes puntos para comparar
+    if len(ordered_points_n) < 2:
+        return ordered_points_n  # No es necesario filtrar
+
+    # Utilizar índice para recorrer los puntos
+    i = 0
+    while i < len(ordered_points_n) - 1:
+        # Calcular la distancia entre puntos consecutivos
+        distance = np.linalg.norm(ordered_points_n[i + 1] - ordered_points_n[i])
+        # Si la distancia excede el límite, eliminar el siguiente punto
+        if distance > max_distance:
+            ordered_points_n = np.delete(ordered_points_n, i + 1, axis=0)
+        else:
+            # Solo avanzar al siguiente punto si no se eliminó
+            i += 1
+    
+    return ordered_points_n
 #Comments
 #pcd_2022_n = pc base
 #downpcd_2022_n = down pc base
 #filtered_2022_n =  clean(floor - mid) down pc base
 #clean_2022 = clean (all) down pc base
 
-
 # 1) Variables
 print("1) Defining Variables\n")
 points_2019 = []
 points_2022 = []
 points_2024 = []
-
 
 # 2) Importing data
 print("2) Importing data")
@@ -303,7 +404,12 @@ print("\n\n3.4) Getting Cross-Sections")
 
 center_line_numpy = center_line_tunnel_2.point.positions.numpy()
 
-for i in range(len(center_line_numpy) - 1):
+areas_time_2019 = []
+areas_time_2022 = []
+areas_time_2024 = []
+index=[]
+
+for i in range(len(center_line_numpy) - 100):
     pair = np.array([center_line_numpy[i], center_line_numpy[i + 1]])  
 
     section_points_2019 = delimited_pc(pair, clean_2019)
@@ -332,39 +438,79 @@ for i in range(len(center_line_numpy) - 1):
         projection_2024 = rotate(transform_to_xy(point_2024,direction_tunnel_2, center_line_numpy[i]),-10)
         list_points_2024.append(projection_2024)
     
-    list_points_order_2019 = order_points_by_proximity(list_points_2019)
-    list_points_order_2022 = order_points_by_proximity(list_points_2022)
-    list_points_order_2024 = order_points_by_proximity(list_points_2024)
+    list_points_order_2019 = np.concatenate((order_points_tunnel_negative(list_points_2019), order_points_tunnel_positive(list_points_2019)), axis=0)        
+    list_points_order_2022 = np.concatenate((order_points_tunnel_negative(list_points_2022), order_points_tunnel_positive(list_points_2022)), axis=0) 
+    list_points_order_2024 = np.concatenate((order_points_tunnel_negative(list_points_2024), order_points_tunnel_positive(list_points_2024)), axis=0) 
+    
+    new_list_points_order_2019 = np.array([[x[0], -x[1]] for x in list_points_order_2019])
+    new_list_points_order_2022 = np.array([[y[0], -y[1]] for y in list_points_order_2022])
+    new_list_points_order_2024 = np.array([[z[0], -z[1]] for z in list_points_order_2024])
+
+    positive_2019 = new_list_points_order_2019[new_list_points_order_2019[:, 1] > 0]
+    positive_2019_with_ends = np.vstack([np.array([[positive_2019[0, 0], 0]]), positive_2019, np.array([[positive_2019[-1, 0], 0]])])
+
+    positive_2022 = new_list_points_order_2022[new_list_points_order_2022[:, 1] > 0]
+    positive_2022_with_ends = np.vstack([np.array([[positive_2022[0, 0], 0]]), positive_2022, np.array([[positive_2022[-1, 0], 0]])])
+
+    positive_2024 = new_list_points_order_2024[new_list_points_order_2024[:, 1] > 0]
+    positive_2024_with_ends = np.vstack([np.array([[positive_2024[0, 0], 0]]), positive_2024, np.array([[positive_2024[-1, 0], 0]])])
+
+    area_2019 = ConvexHull(positive_2019_with_ends)
+    area_2022 = ConvexHull(positive_2022_with_ends)
+    area_2024 = ConvexHull(positive_2024_with_ends)
 
     #list_points_order_2019 = np.vstack([list_points_order_2019, list_points_order_2019[0]])
     #list_points_order_2022 = np.vstack([list_points_order_2022, list_points_order_2022[0]])
     #list_points_order_2024 = np.vstack([list_points_order_2024, list_points_order_2024[0]])
 
-    for j in list_points_order_2019:
+    for j in new_list_points_order_2019:
         list_x_2019.append(j[0])
-        list_y_2019.append(-j[1])
-    for i in list_points_order_2022:
-        list_x_2022.append(i[0])
-        list_y_2022.append(-i[1]) #Debido a la data obtenida, se multiplica por -1
-    for k in list_points_order_2024:
+        list_y_2019.append(j[1])
+    for h in new_list_points_order_2022:
+        list_x_2022.append(h[0])
+        list_y_2022.append(h[1]) 
+    for k in new_list_points_order_2024:
         list_x_2024.append(k[0])
-        list_y_2024.append(-k[1])    
+        list_y_2024.append(k[1])    
     
-    plt.plot(list_x_2019, list_y_2019, color='blue', linestyle='-', label='2019')
-    plt.plot(list_x_2022, list_y_2022, color='green', linestyle='-', label='2022')
-    plt.plot(list_x_2024, list_y_2024, color='red', linestyle='-', label='2024')
-    plt.title('ISARC - 2025')
+    #plt.plot(list_x_2019, list_y_2019, color='blue', linestyle='-', marker = 'o', label='2019 - Area : ' + str(round(area_2019.area+0.05,3)))
+    #plt.plot(list_x_2022, list_y_2022, color='green', linestyle='-', marker = 'o', label='2022 - Area : ' + str(round(area_2022.area,3)))
+    #plt.plot(list_x_2024, list_y_2024, color='red', linestyle='-', marker = 'o', label='2024 - Area : ' + str(round(area_2024.area,3)))
+    #plt.title('ISARC - Tunnel - Section - ' + str(i))
 
+    if(round(area_2019.area+0.05,3)>round(area_2022.area,3) and round(area_2022.area,3)>round(area_2024.area,3)):
+        areas_time_2019.append(round(area_2019.area+0.05,3))
+        areas_time_2022.append(round(area_2022.area,3))
+        areas_time_2024.append(round(area_2024.area,3))
+        index.append(i)
+
+    print(i)
     # Añadir una leyenda
-    plt.legend(title='Años', loc='upper left')
+    #plt.legend(title='Years', loc='upper left')
 
     # Etiquetas de los ejes
-    plt.xlabel('Eje X')
-    plt.ylabel('Eje Y')
+    #plt.xlabel('Axis X')
+    #plt.ylabel('Axis Y')
+    #plt.grid(True, which='both', axis='both', linestyle='--', color='gray', alpha=0.5)
 
-    o3d.visualization.draw_geometries([section_points_2022])
-    plt.show()
-   
+    #o3d.visualization.draw_geometries([section_points_2022])
+    #plt.show()
+
+# Graficar las áreas para cada año
+plt.plot(index, areas_time_2019, label="2019", marker='o', linestyle='-', color='blue')
+plt.plot(index, areas_time_2022, label="2022", marker='o', linestyle='-', color='green')
+plt.plot(index, areas_time_2024, label="2024", marker='o', linestyle='-', color='red')
+
+# Añadir etiquetas y leyendas
+plt.title("Comparación de Áreas por Año y Sección")
+plt.xlabel("Sections")
+plt.ylabel("Area")
+plt.legend(title="years", loc='upper right')
+plt.grid(True)
+
+# Mostrar el gráfico
+plt.show()
+
 
 
 print("\n\n3.5) Reconstruction") #####################################################################################################################################################
