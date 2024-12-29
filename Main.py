@@ -478,7 +478,7 @@ for i in range(len(center_line_numpy) - 100):
     #plt.plot(list_x_2024, list_y_2024, color='red', linestyle='-', marker = 'o', label='2024 - Area : ' + str(round(area_2024.area,3)))
     #plt.title('ISARC - Tunnel - Section - ' + str(i))
 
-    if(round(area_2019.area+0.05,3)>round(area_2022.area,3) and round(area_2022.area,3)>round(area_2024.area,3)):
+    if(round(area_2019.area+0.05,3)>round(area_2022.area,3) and round(area_2022.area,3)>round(area_2024.area,3) and round(area_2024.area,3)>7.50 and round(area_2019.area+0.05,3)<8.3 ):
         areas_time_2019.append(round(area_2019.area+0.05,3))
         areas_time_2022.append(round(area_2022.area,3))
         areas_time_2024.append(round(area_2024.area,3))
@@ -499,10 +499,10 @@ for i in range(len(center_line_numpy) - 100):
 # Graficar las áreas para cada año
 plt.plot(index, areas_time_2019, label="2019", marker='o', linestyle='-', color='blue')
 plt.plot(index, areas_time_2022, label="2022", marker='o', linestyle='-', color='green')
-plt.plot(index, areas_time_2024, label="2024", marker='o', linestyle='-', color='red')
+#plt.plot(index, areas_time_2024, label="2024", marker='o', linestyle='-', color='red')
 
 # Añadir etiquetas y leyendas
-plt.title("Comparación de Áreas por Año y Sección")
+plt.title("Section - Area - ISARC 2025")
 plt.xlabel("Sections")
 plt.ylabel("Area")
 plt.legend(title="years", loc='upper right')
@@ -511,6 +511,19 @@ plt.grid(True)
 # Mostrar el gráfico
 plt.show()
 
+#plt.plot(index, areas_time_2019, label="2019", marker='o', linestyle='-', color='blue')
+plt.plot(index, areas_time_2022, label="2022", marker='o', linestyle='-', color='green')
+plt.plot(index, areas_time_2024, label="2024", marker='o', linestyle='-', color='red')
+
+# Añadir etiquetas y leyendas
+plt.title("Section - Area - ISARC 2025")
+plt.xlabel("Sections")
+plt.ylabel("Area")
+plt.legend(title="years", loc='upper right')
+plt.grid(True)
+
+# Mostrar el gráfico
+plt.show()
 
 
 print("\n\n3.5) Reconstruction") #####################################################################################################################################################
